@@ -1,0 +1,34 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /files-in-progress/{uid}/{fileId} {
+    	allow create: if request.auth != null
+      		&& request.auth.uid == uid
+        	&& request.resource.metadata != null
+        	&& request.resource.metadata.name is string
+        	&& request.resource.metadata.name.size() > 3
+        	&& request.resource.metadata.name.size() < 80
+        	&& request.resource.metadata.type is string
+        	&& request.resource.metadata.type in ['image', 'video', 'audio', 'other', 'text'];
+    }
+
+    match /users-files/{fileId} {
+    	function isPublic() {
+      	return resource != null && resource.metadata.public == "true";
+      }
+    	function isOwner() {
+      	return resource != null && request.auth != null && resource.metadata.uid == request.auth.uid;
+      }
+
+    	allow get: if isPublic() || isOwner();
+    }
+
+    match /anon-files/{fileId} {
+      allow create: if resource != null
+      		&& resource.metadata != null
+          && int(resource.metadata.expires) > request.time.toMillis()
+          && !('expires' in request.resource.metadata)
+          && request.resource.metadata.name is string;
+  	}
+  }
+}

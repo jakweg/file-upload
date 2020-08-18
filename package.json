@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "serve": "concurrently 'cd functions && tsc --watch true' 'firebase emulators:start' 'cd frontend && npm run serve' 'sleep 10 && browser-sync start --files up-box/src --proxy localhost:8000 --port 3500'"
+  },
+  "dependencies": {
+    "@types/firebase": "^3.2.1",
+    "firebase": "^7.17.2"
+  }
+}

@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    function notUpdating(field) {
+ 			return !(field in request.resource.data)
+  				|| resource.data[field] == request.resource.data[field];
+		}
+    
+		match /files/{fileId} {
+
+    	function isOwner() {
+      	return resource != null && request.auth != null && request.auth.uid == resource.data.uid;
+      }
+
+        
+    	allow delete: if isOwner();
+      allow read: if isOwner();
+      
+    	allow update: if isOwner() 
+      	&& notUpdating('created') 
+        && notUpdating('type') 
+        && notUpdating('size') 
+        && notUpdating('uid') 
+        && notUpdating('myToken');
+    }
+    
+    
+    match /user-tokens/{uid} {
+    	function isSelf() {
+      	return request.auth != null && request.auth.uid == uid;
+      }
+      
+      allow get: if isSelf();
+      allow delete: if isSelf();
+      
+      
+    	allow create: if isSelf()
+      	&& resource == null
+      	&& request.auth != null
+        && request.resource.data.status == 'requested';
+    }
+  }
+}
